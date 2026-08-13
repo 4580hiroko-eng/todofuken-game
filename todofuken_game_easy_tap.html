@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>めざせ！都道府県マスター</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:#f7f4ec;color:#333;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif}
+.wrap{max-width:720px;margin:auto;padding:16px}
+h1{text-align:center;font-size:24px;margin:4px 0 8px}
+#score{text-align:center;font-size:16px;color:#666}
+#question{text-align:center;font-size:22px;font-weight:700;margin:12px 0}
+#message{text-align:center;height:34px;font-size:20px;font-weight:700}
+.map{position:relative;width:100%;height:430px;background:#dff3f7;border-radius:22px;overflow:hidden;box-shadow:0 3px 12px #0002}
+.pref{position:absolute;border:3px solid #555;background:#fff0ae;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:17px;cursor:pointer;touch-action:manipulation;user-select:none;transition:transform .08s,background .12s}
+.pref:active{transform:scale(.96)}
+.pref.correct{background:#aee9a7}
+.pref.wrong{background:#ffb5b5}
+.hokkaido{width:150px;height:105px;right:8%;top:8%;border-radius:55% 45% 50% 45%;transform:rotate(-10deg)}
+.aomori{width:145px;height:70px;right:25%;top:30%;border-radius:45% 50% 45% 40%;transform:rotate(5deg)}
+.akita{width:110px;height:145px;right:38%;top:43%;border-radius:45% 40% 45% 35%;transform:rotate(8deg)}
+.iwate{width:105px;height:155px;right:23%;top:43%;border-radius:40% 50% 45% 45%;transform:rotate(5deg)}
+.miyagi{width:125px;height:80px;right:31%;top:72%;border-radius:45% 50% 45% 50%;transform:rotate(-8deg)}
+.note{text-align:center;font-size:13px;color:#777;margin:10px 0}
+button{display:block;margin:10px auto;padding:11px 20px;border:0;border-radius:12px;background:white;box-shadow:0 2px 7px #0002;font-size:16px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>🗾 めざせ！都道府県マスター</h1>
+<div id="score">せいかい 0 / 0</div>
+<div id="question">北海道をタップしてね！</div>
+<div id="message"></div>
+
+<div class="map" id="map">
+  <div class="pref hokkaido" data-name="北海道">北海道</div>
+  <div class="pref aomori" data-name="青森県">青森県</div>
+  <div class="pref akita" data-name="秋田県">秋田県</div>
+  <div class="pref iwate" data-name="岩手県">岩手県</div>
+  <div class="pref miyagi" data-name="宮城県">宮城県</div>
+</div>
+
+<div class="note">今回は「押しやすさ」を優先した5県版だよ。県の中ならどこを押してもOK！</div>
+<button id="reset">もう一度あそぶ</button>
+</div>
+
+<script>
+const prefs=["北海道","青森県","岩手県","宮城県","秋田県"];
+let target="",correct=0,total=0,timer=null;
+const q=document.getElementById("question"),msg=document.getElementById("message"),score=document.getElementById("score");
+const buttons=[...document.querySelectorAll(".pref")];
+
+function next(){
+  buttons.forEach(b=>b.classList.remove("correct","wrong"));
+  target=prefs[Math.floor(Math.random()*prefs.length)];
+  q.textContent=target+"をタップしてね！";
+}
+buttons.forEach(b=>{
+  b.addEventListener("pointerup",()=>{
+    if(timer)return;
+    total++;
+    if(b.dataset.name===target){
+      correct++;
+      b.classList.add("correct");
+      msg.textContent="🎉 せいかい！";
+    }else{
+      b.classList.add("wrong");
+      msg.textContent="❌ ちがうよ！";
+    }
+    score.textContent=`せいかい ${correct} / ${total}`;
+    timer=setTimeout(()=>{timer=null;msg.textContent="";next()},650);
+  });
+});
+document.getElementById("reset").addEventListener("click",()=>{
+  clearTimeout(timer);timer=null;correct=0;total=0;
+  score.textContent="せいかい 0 / 0";msg.textContent="";next();
+});
+next();
+</script>
+</body>
+</html>
