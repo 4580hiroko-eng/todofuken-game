@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>めざせ！都道府県マスター</title>
+<style>
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0;background:#f7f4ec;color:#333;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;user-select:none;-webkit-user-select:none}
+  .wrap{max-width:760px;margin:auto;padding:14px}
+  h1{text-align:center;font-size:24px;margin:4px 0 5px}
+  #score{text-align:center;color:#666;font-size:16px}
+  #question{text-align:center;font-size:21px;font-weight:700;margin:10px 0 4px}
+  #message{text-align:center;height:34px;font-size:20px;font-weight:700}
+  #map{width:100%;min-height:520px;display:flex;align-items:center;justify-content:center;touch-action:manipulation}
+  #map svg{width:100%;height:auto;max-height:66vh}
+  #map .prefecture{fill:#fff0ae!important;stroke:#555!important;stroke-width:1.4!important;cursor:pointer;touch-action:manipulation}
+  #map .prefecture:active{opacity:.72}
+  #map .prefecture.correct{fill:#9fe39a!important}
+  #map .prefecture.wrong{fill:#ffb0b0!important}
+  button{display:block;margin:8px auto;padding:11px 20px;border:0;border-radius:12px;background:#fff;box-shadow:0 2px 7px #0002;font-size:16px}
+  .note{text-align:center;color:#777;font-size:12px;margin-top:8px}
+  .loading{text-align:center;padding:70px 10px;font-size:18px}
+  .error{text-align:center;padding:40px 15px;color:#a33}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🗾 めざせ！都道府県マスター</h1>
+  <div id="score">せいかい 0 / 0</div>
+  <div id="question">日本地図を読み込み中…</div>
+  <div id="message"></div>
+  <div id="map"><div class="loading">🗾 日本地図を準備中…</div></div>
+  <button id="reset">もう一度あそぶ</button>
+  <div class="note">47都道府県版。県の中をタップすればOK！</div>
+</div>
+
+<script>
+const names={
+"01":"北海道","02":"青森県","03":"岩手県","04":"宮城県","05":"秋田県","06":"山形県","07":"福島県",
+"08":"茨城県","09":"栃木県","10":"群馬県","11":"埼玉県","12":"千葉県","13":"東京都","14":"神奈川県",
+"15":"新潟県","16":"富山県","17":"石川県","18":"福井県","19":"山梨県","20":"長野県","21":"岐阜県",
+"22":"静岡県","23":"愛知県","24":"三重県","25":"滋賀県","26":"京都府","27":"大阪府","28":"兵庫県",
+"29":"奈良県","30":"和歌山県","31":"鳥取県","32":"島根県","33":"岡山県","34":"広島県","35":"山口県",
+"36":"徳島県","37":"香川県","38":"愛媛県","39":"高知県","40":"福岡県","41":"佐賀県","42":"長崎県",
+"43":"熊本県","44":"大分県","45":"宮崎県","46":"鹿児島県","47":"沖縄県"
+};
+const codes=Object.keys(names);
+let target="",correct=0,total=0,locked=false;
+
+const score=document.getElementById("score");
+const question=document.getElementById("question");
+const message=document.getElementById("message");
+const map=document.getElementById("map");
+
+function updateScore(){score.textContent=`せいかい ${correct} / ${total}`}
+
+function nextQuestion(){
+  document.querySelectorAll("#map .prefecture").forEach(x=>x.classList.remove("correct","wrong"));
+  target=codes[Math.floor(Math.random()*codes.length)];
+  question.textContent=names[target]+"をタップしてね！";
+  message.textContent="";
+  locked=false;
+}
+
+function answer(el){
+  if(locked)return;
+  locked=true;
+  total++;
+  if(el.dataset.code===target){
+    correct++;
+    el.classList.add("correct");
+    message.textContent="🎉 せいかい！";
+  }else{
+    el.classList.add("wrong");
+    message.textContent="❌ ちがうよ！";
+    const right=document.querySelector(`#map .prefecture[data-code="${target}"]`);
+    if(right) setTimeout(()=>right.classList.add("correct"),180);
+  }
+  updateScore();
+  setTimeout(nextQuestion,750);
+}
+
+async function loadMap(){
+  try{
+    const res=await fetch("https://geolonia.github.io/japanese-prefectures/map-mobile.svg");
+    if(!res.ok) throw new Error("map load failed");
+    map.innerHTML=await res.text();
+    const prefs=[...document.querySelectorAll("#map .prefecture")];
+    prefs.forEach(el=>{
+      el.addEventListener("pointerup",e=>{e.preventDefault();answer(el)}, {passive:false});
+    });
+    nextQuestion();
+  }catch(e){
+    map.innerHTML='<div class="error">地図を読み込めませんでした。<br>少し時間を置いてもう一度開いてみてね。</div>';
+    question.textContent="読み込みエラー";
+  }
+}
+document.getElementById("reset").addEventListener("click",()=>{
+  correct=0;total=0;updateScore();nextQuestion();
+});
+loadMap();
+</script>
+</body>
+</html>
