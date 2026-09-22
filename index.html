@@ -2,104 +2,43 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>めざせ！都道府県マスター</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>都道府県タップゲーム</title>
 <style>
-  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-  html,body{margin:0;padding:0;background:#f7f4ec;color:#333;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;user-select:none;-webkit-user-select:none}
-  .wrap{max-width:760px;margin:auto;padding:14px}
-  h1{text-align:center;font-size:24px;margin:4px 0 5px}
-  #score{text-align:center;color:#666;font-size:16px}
-  #question{text-align:center;font-size:21px;font-weight:700;margin:10px 0 4px}
-  #message{text-align:center;height:34px;font-size:20px;font-weight:700}
-  #map{width:100%;min-height:520px;display:flex;align-items:center;justify-content:center;touch-action:manipulation}
-  #map svg{width:100%;height:auto;max-height:66vh}
-  #map .prefecture{fill:#fff0ae!important;stroke:#555!important;stroke-width:1.4!important;cursor:pointer;touch-action:manipulation}
-  #map .prefecture:active{opacity:.72}
-  #map .prefecture.correct{fill:#9fe39a!important}
-  #map .prefecture.wrong{fill:#ffb0b0!important}
-  button{display:block;margin:8px auto;padding:11px 20px;border:0;border-radius:12px;background:#fff;box-shadow:0 2px 7px #0002;font-size:16px}
-  .note{text-align:center;color:#777;font-size:12px;margin-top:8px}
-  .loading{text-align:center;padding:70px 10px;font-size:18px}
-  .error{text-align:center;padding:40px 15px;color:#a33}
+body{font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",sans-serif;text-align:center;margin:0;padding:18px 10px 30px;background:#f7f7f7;color:#333}
+h1{font-size:26px;margin:5px 0 12px}h2{font-size:21px;margin:10px 0}
+button{font-size:16px;padding:10px 14px;margin:5px;border:1px solid #bbb;border-radius:10px;background:#fff;cursor:pointer}
+.stage-grid{max-width:520px;margin:10px auto 18px;display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.stage-grid button{margin:0;min-height:52px}
+#question{font-size:23px;font-weight:bold;margin:10px 0 6px}#status{min-height:28px;font-size:17px;margin:4px 0 10px}
+#map{width:100%;max-width:700px;margin:auto;background:#fff;border-radius:14px;padding:6px;box-sizing:border-box;box-shadow:0 1px 5px #ddd}
+#map svg{width:100%;height:auto;display:block}.prefecture{cursor:pointer}.correct{fill:#62c174!important}.wrong{fill:#ef7777!important}
+.hidden{display:none}#result{max-width:520px;margin:18px auto;padding:16px;background:#fff;border-radius:14px;box-shadow:0 1px 5px #ddd}
+#weakList{margin:8px 0 14px;font-weight:bold;line-height:1.8}.primary{background:#333;color:#fff;border-color:#333}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <h1>🗾 めざせ！都道府県マスター</h1>
-  <div id="score">せいかい 0 / 0</div>
-  <div id="question">日本地図を読み込み中…</div>
-  <div id="message"></div>
-  <div id="map"><div class="loading">🗾 日本地図を準備中…</div></div>
-  <button id="reset">もう一度あそぶ</button>
-  <div class="note">47都道府県版。県の中をタップすればOK！</div>
-</div>
-
+<h1>🗾 都道府県タップゲーム</h1>
+<section id="stageSelect"><h2>地方を選んでね</h2><div class="stage-grid">
+<button data-stage="北海道">北海道</button><button data-stage="東北">東北</button><button data-stage="関東">関東</button><button data-stage="中部">中部</button>
+<button data-stage="近畿">近畿</button><button data-stage="中国">中国</button><button data-stage="四国">四国</button><button data-stage="九州・沖縄">九州・沖縄</button>
+</div></section>
+<section id="game" class="hidden"><div id="question"></div><div id="status"></div><div id="map"></div><button id="backButton">地方選択に戻る</button></section>
+<section id="result" class="hidden"><h2 id="resultTitle"></h2><div id="weakText"></div><div id="weakList"></div><button id="retryWeak" class="primary">苦手県だけ復習する</button><button id="retryStage">この地方をもう一度</button><button id="backFromResult">地方選択に戻る</button></section>
 <script>
-const names={
-"01":"北海道","02":"青森県","03":"岩手県","04":"宮城県","05":"秋田県","06":"山形県","07":"福島県",
-"08":"茨城県","09":"栃木県","10":"群馬県","11":"埼玉県","12":"千葉県","13":"東京都","14":"神奈川県",
-"15":"新潟県","16":"富山県","17":"石川県","18":"福井県","19":"山梨県","20":"長野県","21":"岐阜県",
-"22":"静岡県","23":"愛知県","24":"三重県","25":"滋賀県","26":"京都府","27":"大阪府","28":"兵庫県",
-"29":"奈良県","30":"和歌山県","31":"鳥取県","32":"島根県","33":"岡山県","34":"広島県","35":"山口県",
-"36":"徳島県","37":"香川県","38":"愛媛県","39":"高知県","40":"福岡県","41":"佐賀県","42":"長崎県",
-"43":"熊本県","44":"大分県","45":"宮崎県","46":"鹿児島県","47":"沖縄県"
-};
-const codes=Object.keys(names);
-let target="",correct=0,total=0,locked=false;
-
-const score=document.getElementById("score");
-const question=document.getElementById("question");
-const message=document.getElementById("message");
-const map=document.getElementById("map");
-
-function updateScore(){score.textContent=`せいかい ${correct} / ${total}`}
-
-function nextQuestion(){
-  document.querySelectorAll("#map .prefecture").forEach(x=>x.classList.remove("correct","wrong"));
-  target=codes[Math.floor(Math.random()*codes.length)];
-  question.textContent=names[target]+"をタップしてね！";
-  message.textContent="";
-  locked=false;
-}
-
-function answer(el){
-  if(locked)return;
-  locked=true;
-  total++;
-  if(el.dataset.code===target){
-    correct++;
-    el.classList.add("correct");
-    message.textContent="🎉 せいかい！";
-  }else{
-    el.classList.add("wrong");
-    message.textContent="❌ ちがうよ！";
-    const right=document.querySelector(`#map .prefecture[data-code="${target}"]`);
-    if(right) setTimeout(()=>right.classList.add("correct"),180);
-  }
-  updateScore();
-  setTimeout(nextQuestion,750);
-}
-
-async function loadMap(){
-  try{
-    const res=await fetch("https://geolonia.github.io/japanese-prefectures/map-mobile.svg");
-    if(!res.ok) throw new Error("map load failed");
-    map.innerHTML=await res.text();
-    const prefs=[...document.querySelectorAll("#map .prefecture")];
-    prefs.forEach(el=>{
-      el.addEventListener("pointerup",e=>{e.preventDefault();answer(el)}, {passive:false});
-    });
-    nextQuestion();
-  }catch(e){
-    map.innerHTML='<div class="error">地図を読み込めませんでした。<br>少し時間を置いてもう一度開いてみてね。</div>';
-    question.textContent="読み込みエラー";
-  }
-}
-document.getElementById("reset").addEventListener("click",()=>{
-  correct=0;total=0;updateScore();nextQuestion();
-});
-loadMap();
-</script>
-</body>
-</html>
+const prefectures={"01":"北海道","02":"青森県","03":"岩手県","04":"宮城県","05":"秋田県","06":"山形県","07":"福島県","08":"茨城県","09":"栃木県","10":"群馬県","11":"埼玉県","12":"千葉県","13":"東京都","14":"神奈川県","15":"新潟県","16":"富山県","17":"石川県","18":"福井県","19":"山梨県","20":"長野県","21":"岐阜県","22":"静岡県","23":"愛知県","24":"三重県","25":"滋賀県","26":"京都府","27":"大阪府","28":"兵庫県","29":"奈良県","30":"和歌山県","31":"鳥取県","32":"島根県","33":"岡山県","34":"広島県","35":"山口県","36":"徳島県","37":"香川県","38":"愛媛県","39":"高知県","40":"福岡県","41":"佐賀県","42":"長崎県","43":"熊本県","44":"大分県","45":"宮崎県","46":"鹿児島県","47":"沖縄県"};
+const stages={"北海道":["01"],"東北":["02","03","04","05","06","07"],"関東":["08","09","10","11","12","13","14"],"中部":["15","16","17","18","19","20","21","22","23"],"近畿":["24","25","26","27","28","29","30"],"中国":["31","32","33","34","35"],"四国":["36","37","38","39"],"九州・沖縄":["40","41","42","43","44","45","46","47"]};
+let currentStage="",queue=[],currentCode="",wrongCodes=new Set(),mapLoaded=false;
+const stageSelect=document.getElementById("stageSelect"),game=document.getElementById("game"),result=document.getElementById("result"),question=document.getElementById("question"),status=document.getElementById("status"),map=document.getElementById("map"),resultTitle=document.getElementById("resultTitle"),weakText=document.getElementById("weakText"),weakList=document.getElementById("weakList"),retryWeak=document.getElementById("retryWeak");
+function shuffle(a){a=[...a];for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function loadMap(){if(mapLoaded)return Promise.resolve();return fetch("https://geolonia.github.io/japanese-prefectures/map-mobile.svg").then(r=>r.text()).then(t=>{map.innerHTML=t;mapLoaded=true;map.querySelectorAll(".prefecture").forEach(el=>el.addEventListener("pointerup",()=>handleTap(el)));}).catch(()=>map.innerHTML="<p>地図を読み込めませんでした。ページを再読み込みしてみてね。</p>")}
+function startStage(name,codes=null){currentStage=name;wrongCodes=new Set();queue=shuffle(codes||stages[name]);stageSelect.classList.add("hidden");result.classList.add("hidden");game.classList.remove("hidden");loadMap().then(nextQuestion)}
+function nextQuestion(){if(queue.length===0){finishStage();return}map.querySelectorAll(".prefecture").forEach(el=>el.classList.remove("correct","wrong"));currentCode=queue.shift();question.textContent=prefectures[currentCode]+"をタップしてね！";status.textContent="残り "+(queue.length+1)+"問"}
+function handleTap(el){const code=el.getAttribute("data-code");if(!code||!currentCode)return;if(code===currentCode){el.classList.add("correct");status.textContent="⭕ 正解！";currentCode="";setTimeout(nextQuestion,450)}else{wrongCodes.add(currentCode);el.classList.add("wrong");status.textContent="❌ ちがうよ！ "+prefectures[currentCode]+"はここ";const correctEl=map.querySelector('[data-code="'+currentCode+'"]');if(correctEl)correctEl.classList.add("correct");currentCode="";setTimeout(nextQuestion,850)}}
+function finishStage(){game.classList.add("hidden");result.classList.remove("hidden");const weak=[...wrongCodes];if(!weak.length){resultTitle.textContent="🎉 全問正解！";weakText.textContent="今回はまちがえた県なし！すごい！";weakList.textContent="";retryWeak.classList.add("hidden")}else{resultTitle.textContent="おつかれさま！";weakText.textContent="今回まちがえた県は "+weak.length+"県";weakList.textContent=weak.map(c=>prefectures[c]).join("・");retryWeak.classList.remove("hidden");retryWeak.dataset.codes=JSON.stringify(weak)}}
+document.querySelectorAll("[data-stage]").forEach(b=>b.addEventListener("click",()=>startStage(b.dataset.stage)));
+document.getElementById("backButton").addEventListener("click",()=>{currentCode="";game.classList.add("hidden");stageSelect.classList.remove("hidden")});
+document.getElementById("backFromResult").addEventListener("click",()=>{result.classList.add("hidden");stageSelect.classList.remove("hidden")});
+document.getElementById("retryStage").addEventListener("click",()=>startStage(currentStage));
+retryWeak.addEventListener("click",()=>{const w=JSON.parse(retryWeak.dataset.codes||"[]");if(w.length)startStage(currentStage,w)});
+</script></body></html>
